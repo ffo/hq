@@ -316,6 +316,7 @@ public class MxUtil {
         } catch (MalformedObjectNameException e) {
             throw invalidObjectName(objectName, e);
         } catch (IOException e) {
+            removeMBeanConnectorFromCache(config);
             removeMBeanConnector(config);
             if (metric.isAvail()) {
                 return new Double(Metric.AVAIL_DOWN);
@@ -461,6 +462,17 @@ public class MxUtil {
         };
         return (JMXConnector) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                                                      new Class<?>[] {JMXConnector.class}, handler);
+    }
+
+    public static void removeMBeanConnectorFromCache(Properties config) {
+        String jmxUrl = config.getProperty(MxUtil.PROP_JMX_URL);
+        String user = config.getProperty(PROP_JMX_USERNAME);
+        String pass = config.getProperty(PROP_JMX_PASSWORD);
+        JMXConnectorKey key = new JMXConnectorKey(jmxUrl, user, pass);
+        log.info("Remove MBean Connector for URL " +jmxUrl +" User " +user +" from cache");
+        synchronized(mbeanConns) {
+            mbeanConns.remove(key);
+        }
     }
 
     private static class JMXConnectorKey {
